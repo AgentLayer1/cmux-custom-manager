@@ -13,6 +13,7 @@ const RUNTIME =
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const MANAGER = readFileSync(join(ROOT, "dist", "manager.js"), "utf8");
 const HOST = await bundle("examples/host.ts");
+const TABS = await bundle("examples/tabs.ts");
 
 type Op =
   | { op: "create"; id: string; type: string }
@@ -325,4 +326,42 @@ test("a host's exclude leaves a session out of every section, tally and search",
   expect(texts[7], "the Idle tally drops by one").toBe("0");
   host.type("frost");
   expect(host.visibleTexts(), "a search that only it matched finds nothing").toContain("No matches.");
+});
+
+test("a host's pages are tabbed after Sessions under the header, which keeps its tallies on every page", () => {
+  const host = mount(fixture, TABS);
+  const sessions = host.visibleTexts();
+  expect(sessions.slice(0, 1)).toEqual(["Manager"]);
+  const tallies = sessions.slice(1, 5);
+  expect(sessions.slice(5, 7)).toEqual(["Sessions", "Notes"]);
+  expect(outline(sessions)).toEqual(FULL_OUTLINE);
+  host.tap("Notes");
+  const notes = host.visibleTexts();
+  expect(notes.slice(0, 7)).toEqual(["Manager", ...tallies, "Sessions", "Notes"]);
+  expect(notes).toContain("Ship the beta on Friday");
+  expect(notes).not.toContain("NEEDS YOU");
+  host.type("staging");
+  expect(host.visibleTexts()).not.toContain("Ship the beta on Friday");
+});
+
+test("coming back to Sessions builds it fresh, with an empty search", () => {
+  const host = mount(fixture, TABS);
+  host.type("redis");
+  expect(outline(host.visibleTexts())).not.toEqual(FULL_OUTLINE);
+  host.tap("Notes");
+  host.tap("Sessions");
+  expect(outline(host.visibleTexts())).toEqual(FULL_OUTLINE);
+});
+
+test("a host's search button ends the sessions search row, and only on Sessions", () => {
+  const host = mount(fixture, TABS);
+  expect(host.images()).toContain("book");
+  host.tap("Notes");
+  expect(host.images()).not.toContain("book");
+  host.tap("Sessions");
+  expect(host.images()).toContain("book");
+});
+
+test("without pages the manager draws no tabs", () => {
+  expect(mount(fixture).visibleTexts()).not.toContain("Sessions");
 });

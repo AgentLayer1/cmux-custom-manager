@@ -20,6 +20,18 @@ interface SubagentEntry extends Subagent {
 
 type Entry = HeaderEntry | CardEntry | SubagentEntry;
 
+export interface ManagerPage {
+  /**
+   * Names the page for `page`; `sessions` is taken by the manager's own.
+   */
+  id: string;
+  label: string;
+  /**
+   * Built each time the page is shown, so leaving it disposes what it built.
+   */
+  view: () => View;
+}
+
 export interface ManagerOptions {
   /**
    * Drawn in place of the Manager icon and title, beside the tallies: where a host puts its own tabs.
@@ -38,13 +50,41 @@ export interface ManagerOptions {
    * Sessions it returns true for are left out of the manager: its sections, tallies, search and group chips.
    */
   exclude?: (card: Card) => boolean;
+  /**
+   * Pages of the host's own, tabbed after Sessions under the header row. The header and its tallies stay on every page.
+   */
+  pages?: ManagerPage[];
+  /**
+   * The page to open on, by id; Sessions when absent or unknown.
+   */
+  page?: string;
+  /**
+   * Built at the end of the sessions search row each time it's shown: where a host puts buttons of its own.
+   */
+  searchTrailing?: () => View;
 }
+
+const SESSIONS = "sessions";
 
 /**
  * The whole Manager panel. Each call owns its search, group filter and folded sections.
  */
-export const manager = ({ header, trailing, sections: hosted = [], exclude }: ManagerOptions = {}) => {
+export const manager = ({
+  header,
+  trailing,
+  sections: hosted = [],
+  exclude,
+  pages = [],
+  page: start,
+  searchTrailing,
+}: ManagerOptions = {}) => {
   const [query, setQuery] = signal("");
+  const [page, setPage] = signal(pages.find((item) => item.id === start)?.id ?? SESSIONS);
+  // The search box is rebuilt empty on coming back to Sessions, so the query starts over with it.
+  const showPage = (id: string) => {
+    setQuery("");
+    setPage(id);
+  };
   const [groupFilter, setGroupFilter] = signal("");
   const [collapsed, setCollapsed] = signal<Section[]>(["ended"]);
 
@@ -127,6 +167,48 @@ export const manager = ({ header, trailing, sections: hosted = [], exclude }: Ma
     }
   };
 
+  const sessions = () =>
+    VStack({ spacing: 4 }, [
+      VStack({ spacing: 8 }, [
+        ForEach({ items: () => (groupChips().length ? ["chips"] : []), key: (item) => item }, () =>
+          HStack({ spacing: 4 }, [
+            chip("All", () => !effectiveGroupFilter(), () => setGroupFilter("")),
+            ForEach({ items: groupChips, key: (group) => group.id }, (group) =>
+              chip(
+                () => group().name,
+                () => effectiveGroupFilter() === group().id,
+                () => setGroupFilter(effectiveGroupFilter() === group().id ? "" : group().id),
+              ),
+            ),
+            Spacer(),
+          ]),
+        ),
+
+        searchTrailing
+          ? HStack({ spacing: 4 }, [searchField("Search sessions…", setQuery), searchTrailing()])
+          : searchField("Search sessions…", setQuery),
+      ]),
+
+      VStack({ spacing: 4 }, [
+        ...added.map(({ view }) => view()),
+        ForEach({ items: entries, key: (entry) => entry.key }, row),
+      ]),
+
+      Text(() => {
+        if (entries().length > 0) {
+          return "";
+        }
+        if (query().trim() || effectiveGroupFilter()) {
+          return cardsShown() ? "" : "No matches.";
+        }
+        return "No agents running in cmux.";
+      })
+        .font(11)
+        .color("tertiary")
+        .paddingHorizontal(10)
+        .paddingTop(10),
+    ]);
+
   return VStack({ spacing: 8 }, [
     HStack({ spacing: 8 }, [
       header ??
@@ -145,38 +227,25 @@ export const manager = ({ header, trailing, sections: hosted = [], exclude }: Ma
       ...(trailing ? [trailing] : []),
     ]),
 
-    ForEach({ items: () => (groupChips().length ? ["chips"] : []), key: (item) => item }, () =>
-      HStack({ spacing: 4 }, [
-        chip("All", () => !effectiveGroupFilter(), () => setGroupFilter("")),
-        ForEach({ items: groupChips, key: (group) => group.id }, (group) =>
-          chip(
-            () => group().name,
-            () => effectiveGroupFilter() === group().id,
-            () => setGroupFilter(effectiveGroupFilter() === group().id ? "" : group().id),
-          ),
-        ),
-        Spacer(),
-      ]),
+    ...(pages.length
+      ? [
+          HStack({ spacing: 4 }, [
+            ...[{ id: SESSIONS, label: "Sessions" }, ...pages].map((tab) =>
+              chip(
+                tab.label,
+                () => page() === tab.id,
+                () => showPage(tab.id),
+              ),
+            ),
+            Spacer({ minLength: 0 }),
+          ]),
+        ]
+      : []),
+
+    // Keyed by page, so leaving one disposes it and coming back builds it fresh.
+    ForEach({ items: () => [page()], key: (id) => id }, (id) =>
+      (pages.find((item) => item.id === id())?.view ?? sessions)(),
     ),
-
-    searchField("Search sessions…", setQuery),
-
-    ...added.map(({ view }) => view),
-
-    VStack({ spacing: 4 }, [ForEach({ items: entries, key: (entry) => entry.key }, row)]),
-
-    Text(() => {
-      if (entries().length > 0) {
-        return "";
-      }
-      if (query().trim() || effectiveGroupFilter()) {
-        return cardsShown() ? "" : "No matches.";
-      }
-      return "No agents running in cmux.";
-    })
-      .font(11)
-      .color("tertiary")
-      .paddingHorizontal(10),
     Spacer(),
   ]).paddingHorizontal(6);
 };

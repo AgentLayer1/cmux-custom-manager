@@ -188,7 +188,7 @@ const cardList = (section: SectionHead & SectionCards, query: () => string) => {
 
 /**
  * A host's section as the manager draws it: its look and count for the header row's tally, the cards the search left
- * in it, and its view.
+ * in it, and a builder for its view, whose fold and open card outlast a rebuild.
  */
 export const hostSection = (section: HostSection, query: () => string) => {
   const [tapped, setTapped] = signal<boolean | null>(null);
@@ -196,13 +196,14 @@ export const hostSection = (section: HostSection, query: () => string) => {
   const folded = () => tapped() ?? (typeof given === "function" ? given() : (given ?? false));
   const { shown, count, view: body } =
     "content" in section ? { shown: () => [], count: section.count, view: section.content } : cardList(section, query);
-  const view = when(
-    () => count() > 0,
-    () =>
-      VStack({ spacing: 4 }, [
-        sectionHeader(section, count, folded, () => setTapped(!folded())),
-        when(() => !folded(), body),
-      ]),
-  );
+  const view = () =>
+    when(
+      () => count() > 0,
+      () =>
+        VStack({ spacing: 4 }, [
+          sectionHeader(section, count, folded, () => setTapped(!folded())),
+          when(() => !folded(), body),
+        ]),
+    );
   return { look: section, count, cards: shown, view };
 };

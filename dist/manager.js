@@ -1,5 +1,5 @@
 /*
- * cmux Manager · v0.4.5 (1)
+ * cmux Manager · v0.5.0 (1)
  * Every coding agent in cmux, sorted by what needs you.
  *
  *   NEEDS YOU   waiting on input, or a finished turn you haven't looked at
@@ -250,7 +250,7 @@ var hostSection = (section, query) => {
   const given = section.folded;
   const folded = () => tapped() ?? (typeof given === "function" ? given() : given ?? false);
   const { shown, count, view: body } = "content" in section ? { shown: () => [], count: section.count, view: section.content } : cardList(section, query);
-  const view = when(() => count() > 0, () => VStack({ spacing: 4 }, [
+  const view = () => when(() => count() > 0, () => VStack({ spacing: 4 }, [
     sectionHeader(section, count, folded, () => setTapped(!folded())),
     when(() => !folded(), body)
   ]));
@@ -258,8 +258,22 @@ var hostSection = (section, query) => {
 };
 
 // src/manager.ts
-var manager = ({ header, trailing, sections: hosted = [], exclude } = {}) => {
+var SESSIONS = "sessions";
+var manager = ({
+  header,
+  trailing,
+  sections: hosted = [],
+  exclude,
+  pages = [],
+  page: start,
+  searchTrailing
+} = {}) => {
   const [query, setQuery] = signal("");
+  const [page, setPage] = signal(pages.find((item) => item.id === start)?.id ?? SESSIONS);
+  const showPage = (id) => {
+    setQuery("");
+    setPage(id);
+  };
   const [groupFilter, setGroupFilter] = signal("");
   const [collapsed, setCollapsed] = signal(["ended"]);
   const toggleSection = (section) => setCollapsed(collapsed().includes(section) ? collapsed().filter((name) => name !== section) : [...collapsed(), section]);
@@ -315,6 +329,29 @@ var manager = ({ header, trailing, sections: hosted = [], exclude } = {}) => {
         return subagentRow(entry);
     }
   };
+  const sessions = () => VStack({ spacing: 4 }, [
+    VStack({ spacing: 8 }, [
+      ForEach({ items: () => groupChips().length ? ["chips"] : [], key: (item) => item }, () => HStack({ spacing: 4 }, [
+        chip("All", () => !effectiveGroupFilter(), () => setGroupFilter("")),
+        ForEach({ items: groupChips, key: (group) => group.id }, (group) => chip(() => group().name, () => effectiveGroupFilter() === group().id, () => setGroupFilter(effectiveGroupFilter() === group().id ? "" : group().id))),
+        Spacer()
+      ])),
+      searchTrailing ? HStack({ spacing: 4 }, [searchField("Search sessions…", setQuery), searchTrailing()]) : searchField("Search sessions…", setQuery)
+    ]),
+    VStack({ spacing: 4 }, [
+      ...added.map(({ view }) => view()),
+      ForEach({ items: entries, key: (entry) => entry.key }, row)
+    ]),
+    Text(() => {
+      if (entries().length > 0) {
+        return "";
+      }
+      if (query().trim() || effectiveGroupFilter()) {
+        return cardsShown() ? "" : "No matches.";
+      }
+      return "No agents running in cmux.";
+    }).font(11).color("tertiary").paddingHorizontal(10).paddingTop(10)
+  ]);
   return VStack({ spacing: 8 }, [
     HStack({ spacing: 8 }, [
       header ?? HStack({ spacing: 6 }, [
@@ -328,23 +365,13 @@ var manager = ({ header, trailing, sections: hosted = [], exclude } = {}) => {
       ]).fixedSize(),
       ...trailing ? [trailing] : []
     ]),
-    ForEach({ items: () => groupChips().length ? ["chips"] : [], key: (item) => item }, () => HStack({ spacing: 4 }, [
-      chip("All", () => !effectiveGroupFilter(), () => setGroupFilter("")),
-      ForEach({ items: groupChips, key: (group) => group.id }, (group) => chip(() => group().name, () => effectiveGroupFilter() === group().id, () => setGroupFilter(effectiveGroupFilter() === group().id ? "" : group().id))),
-      Spacer()
-    ])),
-    searchField("Search sessions…", setQuery),
-    ...added.map(({ view }) => view),
-    VStack({ spacing: 4 }, [ForEach({ items: entries, key: (entry) => entry.key }, row)]),
-    Text(() => {
-      if (entries().length > 0) {
-        return "";
-      }
-      if (query().trim() || effectiveGroupFilter()) {
-        return cardsShown() ? "" : "No matches.";
-      }
-      return "No agents running in cmux.";
-    }).font(11).color("tertiary").paddingHorizontal(10),
+    ...pages.length ? [
+      HStack({ spacing: 4 }, [
+        ...[{ id: SESSIONS, label: "Sessions" }, ...pages].map((tab) => chip(tab.label, () => page() === tab.id, () => showPage(tab.id))),
+        Spacer({ minLength: 0 })
+      ])
+    ] : [],
+    ForEach({ items: () => [page()], key: (id) => id }, (id) => (pages.find((item) => item.id === id())?.view ?? sessions)()),
     Spacer()
   ]).paddingHorizontal(6);
 };
