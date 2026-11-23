@@ -245,7 +245,6 @@ test("a host's sections sit above Needs you in order, with their own icons, coun
   const texts = host.visibleTexts();
   const at = texts.indexOf("QUEUE");
   expect(texts.slice(at, at + HOSTED.length), "the queue open with its first card expanded, the note folded").toEqual(HOSTED);
-  expect(texts.indexOf("All"), "under the search and group chips").toBeLessThan(at);
   expect(texts[at + HOSTED.length], "the manager's first section follows").toBe("NEEDS YOU");
   expect(host.images()).toEqual(expect.arrayContaining(["tray.full.fill", "note.text"]));
   host.tap("NOTES");
@@ -364,4 +363,13 @@ test("a host's search button ends the sessions search row, and only on Sessions"
 
 test("without pages the manager draws no tabs", () => {
   expect(mount(fixture).visibleTexts()).not.toContain("Sessions");
+});
+
+test("cmux's workspace groups draw no chips; searching a group's name narrows the list to it", () => {
+  const { visibleTexts, type } = mount(fixture);
+  expect(visibleTexts()).not.toContain("All");
+  expect(visibleTexts()).not.toContain("Side projects");
+  type("side projects");
+  expect(outline(visibleTexts())).toContain("Frost date lookup");
+  expect(outline(visibleTexts())).not.toContain("Dark mode audit");
 });

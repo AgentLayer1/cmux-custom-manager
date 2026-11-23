@@ -43,7 +43,6 @@ Every Claude Code and Codex session across all your workspaces, one card each, s
 ### Find things fast
 
 - **Search** by title, prompt, workspace, group, folder or branch
-- **Group chips** to show one workspace group at a time
 
 </td>
 </tr>

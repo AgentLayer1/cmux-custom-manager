@@ -47,7 +47,7 @@ export interface ManagerOptions {
    */
   sections?: HostSection[];
   /**
-   * Sessions it returns true for are left out of the manager: its sections, tallies, search and group chips.
+   * Sessions it returns true for are left out of the manager: its sections, tallies and search.
    */
   exclude?: (card: Card) => boolean;
   /**
@@ -67,7 +67,7 @@ export interface ManagerOptions {
 const SESSIONS = "sessions";
 
 /**
- * The whole Manager panel. Each call owns its search, group filter and folded sections.
+ * The whole Manager panel. Each call owns its search and folded sections.
  */
 export const manager = ({
   header,
@@ -85,7 +85,6 @@ export const manager = ({
     setQuery("");
     setPage(id);
   };
-  const [groupFilter, setGroupFilter] = signal("");
   const [collapsed, setCollapsed] = signal<Section[]>(["ended"]);
 
   const toggleSection = (section: Section) =>
@@ -93,19 +92,9 @@ export const manager = ({
 
   const kept = computed(() => (exclude ? agentCards().filter((card) => !exclude(card)) : agentCards()));
 
-  // cmux's right-sidebar host passes no groups (still true in 0.65.2), so there the chip row disappears.
-  const groupChips = computed(() => {
-    const withAgents = new Set(kept().map((card) => card.groupId));
-    return (data.groups() ?? []).filter((group) => withAgents.has(group.id));
-  });
-  const effectiveGroupFilter = computed(() =>
-    groupChips().some((group) => group.id === groupFilter()) ? groupFilter() : "",
-  );
-
   const cards = computed(() => {
     const tokens = query().trim().toLowerCase().split(/\s+/).filter(Boolean);
     return kept()
-      .filter((card) => !effectiveGroupFilter() || card.groupId === effectiveGroupFilter())
       .filter((card) => {
         const haystack = [card.title, card.searchText, card.workspaceTitle, card.group, card.folder, card.branch]
           .join(" ")
@@ -169,25 +158,9 @@ export const manager = ({
 
   const sessions = () =>
     VStack({ spacing: 4 }, [
-      VStack({ spacing: 8 }, [
-        ForEach({ items: () => (groupChips().length ? ["chips"] : []), key: (item) => item }, () =>
-          HStack({ spacing: 4 }, [
-            chip("All", () => !effectiveGroupFilter(), () => setGroupFilter("")),
-            ForEach({ items: groupChips, key: (group) => group.id }, (group) =>
-              chip(
-                () => group().name,
-                () => effectiveGroupFilter() === group().id,
-                () => setGroupFilter(effectiveGroupFilter() === group().id ? "" : group().id),
-              ),
-            ),
-            Spacer(),
-          ]),
-        ),
-
-        searchTrailing
-          ? HStack({ spacing: 4 }, [searchField("Search sessions…", setQuery), searchTrailing()])
-          : searchField("Search sessions…", setQuery),
-      ]),
+      searchTrailing
+        ? HStack({ spacing: 4 }, [searchField("Search sessions…", setQuery), searchTrailing()])
+        : searchField("Search sessions…", setQuery),
 
       VStack({ spacing: 4 }, [
         ...added.map(({ view }) => view()),
@@ -198,7 +171,7 @@ export const manager = ({
         if (entries().length > 0) {
           return "";
         }
-        if (query().trim() || effectiveGroupFilter()) {
+        if (query().trim()) {
           return cardsShown() ? "" : "No matches.";
         }
         return "No agents running in cmux.";
