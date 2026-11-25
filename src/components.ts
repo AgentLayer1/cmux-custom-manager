@@ -2,6 +2,9 @@ import { type Card, epoch, fmtSpan, jump, type Section, type SectionLook, SECTIO
 
 const MAIN_BRANCH = /^(main|master)$/;
 
+// A card's tint of its section's colour, light enough that the card's text still reads on it in either appearance.
+export const CARD_TINT = "14";
+
 export interface Badge {
   key: string;
   text: string;
@@ -184,7 +187,7 @@ export const cardRow = (card: () => Card) =>
     .paddingHorizontal(10)
     .paddingVertical(8)
     .cornerRadius(10)
-    .background(() => (card().agent.status === "needs_input" ? `${SECTIONS.needs.color}1f` : "#7f7f7f0d"))
+    .background(() => (card().section === "needs" ? `${SECTIONS.needs.color}${CARD_TINT}` : "#7f7f7f0d"))
     .hoverBackground("#7f7f7f26")
     .cursor("pointer")
     .frame({ maxWidth: "infinity" })

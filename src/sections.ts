@@ -1,9 +1,9 @@
-import { badge, sectionHeader } from "./components.ts";
+import { badge, CARD_TINT, sectionHeader } from "./components.ts";
 
 export interface CardBadge {
   text: string;
   /**
-   * `#RRGGBB`: the text in it, the fill a tint of it.
+   * `#RRGGBB`: its icon, and the fill a tint of it.
    */
   color: string;
   /**
@@ -148,7 +148,8 @@ const sectionCard = (card: () => SectionCard, color: string, expanded: () => boo
     .paddingHorizontal(10)
     .paddingVertical(8)
     .cornerRadius(10)
-    .background(() => (expanded() ? `${color}1f` : "#7f7f7f0d"))
+    .background(() => `${color}${expanded() ? "1f" : CARD_TINT}`)
+    .hoverBackground("#7f7f7f26")
     .frame({ maxWidth: "infinity", alignment: "leading" });
 
 // A card the operator closed by hand stays closed until they open another.

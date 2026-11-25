@@ -1,5 +1,5 @@
 /*
- * cmux Manager · v0.5.1 (1)
+ * cmux Manager · v0.5.2 (1)
  * Every coding agent in cmux, sorted by what needs you.
  *
  *   NEEDS YOU   waiting on input, or a finished turn you haven't looked at
@@ -102,6 +102,7 @@ var jump = (workspaceId, focusId) => focusId ? cmux("surface.focus", { surface_i
 
 // src/components.ts
 var MAIN_BRANCH = /^(main|master)$/;
+var CARD_TINT = "14";
 var timeText = (agent) => {
   const live = agent.status === "working" || agent.status === "needs_input";
   const start = live && agent.sinceEpoch || agent.lastActivityAt;
@@ -174,7 +175,7 @@ var cardRow = (card) => VStack({ spacing: 4 }, [
   ]),
   HStack({ spacing: 4 }, [ForEach({ items: () => badgesOf(card()), key: (item) => item.key }, badge)]).paddingLeading(14).frame({ maxWidth: "infinity" }),
   ForEach({ items: () => card().summary ? [card().summary] : [], key: () => "summary" }, (summary) => Text(() => summary()).font(11).color("tertiary").lineLimit(2).truncation("tail").paddingLeading(14))
-]).paddingHorizontal(10).paddingVertical(8).cornerRadius(10).background(() => card().agent.status === "needs_input" ? `${SECTIONS.needs.color}1f` : "#7f7f7f0d").hoverBackground("#7f7f7f26").cursor("pointer").frame({ maxWidth: "infinity" }).onTap(() => jump(card().workspaceId, card().focusId));
+]).paddingHorizontal(10).paddingVertical(8).cornerRadius(10).background(() => card().section === "needs" ? `${SECTIONS.needs.color}${CARD_TINT}` : "#7f7f7f0d").hoverBackground("#7f7f7f26").cursor("pointer").frame({ maxWidth: "infinity" }).onTap(() => jump(card().workspaceId, card().focusId));
 var subagentRow = (row) => {
   const child = () => row().child;
   return HStack({ spacing: 6 }, [
@@ -221,7 +222,7 @@ var sectionCard = (card, color, expanded, onToggle) => VStack({ spacing: 4, alig
     when(() => !expanded() && Boolean(card().summary), () => Text(() => card().summary ?? "").font(11).color("tertiary").lineLimit(2).truncation("tail").paddingLeading(14))
   ]).frame({ maxWidth: "infinity", alignment: "leading" }).cursor("pointer").onTap(onToggle),
   when(() => expanded() && Boolean(card().body), () => (card().body?.() ?? VStack([])).paddingLeading(14).paddingTop(2))
-]).paddingHorizontal(10).paddingVertical(8).cornerRadius(10).background(() => expanded() ? `${color}1f` : "#7f7f7f0d").frame({ maxWidth: "infinity", alignment: "leading" });
+]).paddingHorizontal(10).paddingVertical(8).cornerRadius(10).background(() => `${color}${expanded() ? "1f" : CARD_TINT}`).hoverBackground("#7f7f7f26").frame({ maxWidth: "infinity", alignment: "leading" });
 var CLOSED = "";
 var cardList = (section, query) => {
   const shown = computed(() => {
