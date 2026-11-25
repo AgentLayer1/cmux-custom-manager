@@ -49,8 +49,8 @@ const badgesOf = (card: Card): Badge[] =>
       key: "branch",
       text: card.branch,
       icon: "arrow.triangle.branch",
-      fg: "green",
-      bg: "#34C7591f",
+      fg: SECTIONS.running.color,
+      bg: `${SECTIONS.running.color}1f`,
       flexible: true,
     },
     card.folder && card.folder !== card.workspaceTitle && {
@@ -76,7 +76,7 @@ export const badge = (item: () => Badge) =>
     Text(() => item().text)
       .font(10)
       .weight("medium")
-      .color(() => item().fg)
+      .color("secondary")
       .lineLimit(1)
       .truncation("tail"),
   ])
@@ -126,7 +126,7 @@ export const sectionHeader = (
   const { label, color, icon } = lookOf(section);
   return HStack({ spacing: 5 }, [
     Image(icon).font(9).color(color).frame({ width: 12 }),
-    Text(label).font(10).weight("bold").color(color),
+    Text(label).font(10).weight("bold").color("secondary"),
     Text(() => String(count()))
       .font(10)
       .monospaced()
@@ -184,7 +184,7 @@ export const cardRow = (card: () => Card) =>
     .paddingHorizontal(10)
     .paddingVertical(8)
     .cornerRadius(10)
-    .background(() => (card().agent.status === "needs_input" ? "#FF9F0A1f" : "#7f7f7f0d"))
+    .background(() => (card().agent.status === "needs_input" ? `${SECTIONS.needs.color}1f` : "#7f7f7f0d"))
     .hoverBackground("#7f7f7f26")
     .cursor("pointer")
     .frame({ maxWidth: "infinity" })

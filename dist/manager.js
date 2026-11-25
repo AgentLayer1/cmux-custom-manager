@@ -1,5 +1,5 @@
 /*
- * cmux Manager · v0.5.0 (2)
+ * cmux Manager · v0.5.1 (1)
  * Every coding agent in cmux, sorted by what needs you.
  *
  *   NEEDS YOU   waiting on input, or a finished turn you haven't looked at
@@ -24,8 +24,8 @@
 var RECENT_SECS = 60 * 60;
 var ENDED_SECS = 24 * 60 * 60;
 var SECTIONS = {
-  needs: { label: "NEEDS YOU", color: "#FF9F0A", icon: "hand.raised.fill" },
-  running: { label: "RUNNING", color: "#34C759", icon: "play.fill" },
+  needs: { label: "NEEDS YOU", color: "#DB7100", icon: "hand.raised.fill" },
+  running: { label: "RUNNING", color: "#1F9D44", icon: "play.fill" },
   recent: { label: "RECENT", color: "#0A84FF", icon: "clock.fill" },
   idle: { label: "IDLE", color: "#8E8E93", icon: "moon.zzz.fill" },
   ended: { label: "ENDED", color: "#8E8E9366", icon: "stop.fill" }
@@ -128,8 +128,8 @@ var badgesOf = (card) => [
     key: "branch",
     text: card.branch,
     icon: "arrow.triangle.branch",
-    fg: "green",
-    bg: "#34C7591f",
+    fg: SECTIONS.running.color,
+    bg: `${SECTIONS.running.color}1f`,
     flexible: true
   },
   card.folder && card.folder !== card.workspaceTitle && {
@@ -145,7 +145,7 @@ var badge = (item) => HStack({ spacing: 3 }, [
   ...item().icon ? [
     Image(() => item().icon).font(8).color(() => item().fg)
   ] : [],
-  Text(() => item().text).font(10).weight("medium").color(() => item().fg).lineLimit(1).truncation("tail")
+  Text(() => item().text).font(10).weight("medium").color("secondary").lineLimit(1).truncation("tail")
 ]).paddingHorizontal(6).paddingVertical(2).background(() => item().bg).cornerRadius(5).fixedSize(() => item().flexible ? null : "horizontal");
 var chip = (label, active, onTap) => Text(label).font(11).weight("semibold").paddingHorizontal(8).paddingVertical(3).cornerRadius(6).color(() => active() ? "primary" : "tertiary").background(() => active() ? "#7f7f7f3d" : null).hoverBackground("#7f7f7f3d").cursor("pointer").fixedSize("horizontal").onTap(onTap);
 var searchField = (placeholder, onEdit) => HStack([
@@ -159,7 +159,7 @@ var sectionHeader = (section, count, folded, onTap) => {
   const { label, color, icon } = lookOf(section);
   return HStack({ spacing: 5 }, [
     Image(icon).font(9).color(color).frame({ width: 12 }),
-    Text(label).font(10).weight("bold").color(color),
+    Text(label).font(10).weight("bold").color("secondary"),
     Text(() => String(count())).font(10).monospaced().color("tertiary"),
     Spacer(),
     Image(() => folded() ? "chevron.right" : "chevron.down").font(9).weight("semibold").color("tertiary")
@@ -174,7 +174,7 @@ var cardRow = (card) => VStack({ spacing: 4 }, [
   ]),
   HStack({ spacing: 4 }, [ForEach({ items: () => badgesOf(card()), key: (item) => item.key }, badge)]).paddingLeading(14).frame({ maxWidth: "infinity" }),
   ForEach({ items: () => card().summary ? [card().summary] : [], key: () => "summary" }, (summary) => Text(() => summary()).font(11).color("tertiary").lineLimit(2).truncation("tail").paddingLeading(14))
-]).paddingHorizontal(10).paddingVertical(8).cornerRadius(10).background(() => card().agent.status === "needs_input" ? "#FF9F0A1f" : "#7f7f7f0d").hoverBackground("#7f7f7f26").cursor("pointer").frame({ maxWidth: "infinity" }).onTap(() => jump(card().workspaceId, card().focusId));
+]).paddingHorizontal(10).paddingVertical(8).cornerRadius(10).background(() => card().agent.status === "needs_input" ? `${SECTIONS.needs.color}1f` : "#7f7f7f0d").hoverBackground("#7f7f7f26").cursor("pointer").frame({ maxWidth: "infinity" }).onTap(() => jump(card().workspaceId, card().focusId));
 var subagentRow = (row) => {
   const child = () => row().child;
   return HStack({ spacing: 6 }, [

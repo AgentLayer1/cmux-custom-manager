@@ -12,9 +12,10 @@ export interface SectionLook {
   icon: string;
 }
 
+// Mid-tones that clear 3:1 on both a light and a dark sidebar: cmux tells a sidebar nothing about the appearance.
 export const SECTIONS = {
-  needs: { label: "NEEDS YOU", color: "#FF9F0A", icon: "hand.raised.fill" },
-  running: { label: "RUNNING", color: "#34C759", icon: "play.fill" },
+  needs: { label: "NEEDS YOU", color: "#DB7100", icon: "hand.raised.fill" },
+  running: { label: "RUNNING", color: "#1F9D44", icon: "play.fill" },
   recent: { label: "RECENT", color: "#0A84FF", icon: "clock.fill" },
   idle: { label: "IDLE", color: "#8E8E93", icon: "moon.zzz.fill" },
   ended: { label: "ENDED", color: "#8E8E9366", icon: "stop.fill" },
